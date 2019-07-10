@@ -4,6 +4,7 @@ import { isRequiredPolyfill } from '../option'
 // https://github.com/microsoft/vscode/blob/5466f27d95c52e8d7c34ed445c682b5d71f049d9/extensions/markdown-language-features/src/markdownEngine.ts#L102-L104
 
 const rules = [
+  'marpit_slide_open', // Marpit's <section> tag (<svg> cannot assign className)
   'paragraph_open',
   'heading_open',
   'image',
@@ -16,24 +17,25 @@ const rules = [
 export default function marpVSCodeLineNumber(md) {
   const { marpit_inline_svg_open } = md.renderer.rules
 
-  // Enable line sync by per slides
-  md.renderer.rules.marpit_inline_svg_open = (tokens, idx, opts, env, self) => {
-    const slide = tokens
-      .slice(idx + 1)
-      .find(t => t.type === 'marpit_slide_open')
+  if (isRequiredPolyfill) {
+    // Enable line sync by per slides
+    // (<svg> does not affect by the transformed position)
+    md.renderer.rules.marpit_inline_svg_open = (tokens, i, opts, env, self) => {
+      const slide = tokens
+        .slice(i + 1)
+        .find(t => t.type === 'marpit_slide_open')
 
-    if (slide.map && slide.map.length) {
-      tokens[idx].attrJoin('class', 'code-line')
-      tokens[idx].attrSet('data-line', slide.map[0])
+      if (slide.map && slide.map.length) {
+        tokens[i].attrJoin('class', 'code-line')
+        tokens[i].attrSet('data-line', slide.map[0])
+      }
+
+      const renderer = marpit_inline_svg_open || self.renderToken
+      return renderer.call(self, tokens, i, opts, env, self)
     }
-
-    const renderer = marpit_inline_svg_open || self.renderToken
-    return renderer.call(self, tokens, idx, opts, env, self)
-  }
-
-  // Enables better line sync only when disabled polyfill
-  // (There are wrong DOM positions if enabled polyfill)
-  if (!isRequiredPolyfill) {
+  } else {
+    // Enables better line sync only when disabled polyfill
+    // (There are wrong DOM positions if enabled polyfill)
     for (const rule of rules) {
       const original = md.renderer.rules[rule]
 

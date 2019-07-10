@@ -40,6 +40,11 @@ body.marp-vscode blockquote {
     overflow: visible;
   }
 
+  /* 1:1 slide mode */
+  #marp-vscode.one-by-one svg[data-marpit-svg]:not(.marp-vscode-active) {
+    display: none;
+  }
+
   /* from https://github.com/Microsoft/vscode-docs-authoring/blob/master/docs-preview/media/markdown.css */
   #code-csp-warning {
     background-color: #444;
